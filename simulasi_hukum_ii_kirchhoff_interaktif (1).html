@@ -1,0 +1,1921 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulasi Hukum II Kirchhoff (KVL) Interaktif</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- MathJax untuk tampilan Equation Matematis -->
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        lab: {
+                            bg: 'var(--lab-bg)',
+                            panel: 'var(--lab-panel)',
+                            card: 'var(--lab-card)',
+                            border: 'var(--lab-border)',
+                            accent: '#38bdf8',
+                            current: '#f59e0b',
+                            electron: '#22d3ee'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Variabel Tema Gelap (Hitam) & Terang (Putih) */
+        :root {
+            --lab-bg: #f8fafc;
+            --lab-panel: #ffffff;
+            --lab-card: #f1f5f9;
+            --lab-border: #cbd5e1;
+        }
+        html.dark {
+            --lab-bg: #0b0f19;
+            --lab-panel: #111827;
+            --lab-card: #1e293b;
+            --lab-border: #334155;
+        }
+        /* Custom Range Slider Styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 6px;
+            border-radius: 999px;
+            background: var(--lab-border);
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #0284c7;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+        html.dark input[type="range"]::-webkit-slider-thumb {
+            background: #38bdf8;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            background: #7dd3fc;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--lab-bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--lab-border);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="bg-lab-bg text-slate-800 dark:text-slate-100 font-sans min-h-screen flex flex-col selection:bg-sky-500 selection:text-white transition-colors duration-200">
+
+    <!-- Header / Navbar -->
+    <header class="bg-lab-panel border-b border-lab-border sticky top-0 z-30 px-4 py-3 shadow-sm dark:shadow-lg transition-colors">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
+                    <i data-lucide="zap" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                        Laboratorium Virtual: Hukum II Kirchhoff
+                        <span class="hidden md:inline-block text-xs font-mono px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/30">ΣE + Σ(I·R) = 0</span>
+                    </h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Simulasi Tegangan & Aliran Arus Listrik Rangkaian Tertutup</p>
+                </div>
+            </div>
+
+            <!-- Mode Selector & Quick Actions -->
+            <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+                <div class="bg-lab-bg p-1 rounded-xl border border-lab-border flex items-center">
+                    <button id="btn-mode-1" onclick="setCircuitMode(1)" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-sky-600 text-white shadow">
+                        Rangkaian 1 Loop
+                    </button>
+                    <button id="btn-mode-2" onclick="setCircuitMode(2)" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                        Rangkaian 2 Loop
+                    </button>
+                </div>
+
+                <!-- Theme Toggle Button (Hitam / Putih) -->
+                <button id="btn-theme-toggle" onclick="toggleTheme()" class="px-3 py-2 rounded-xl bg-lab-card hover:bg-slate-200 dark:hover:bg-slate-700 border border-lab-border text-xs sm:text-sm font-semibold text-slate-700 dark:text-amber-300 flex items-center gap-1.5 transition-colors" title="Ubah Latar Hitam / Putih">
+                    <i id="theme-icon" data-lucide="sun" class="w-4 h-4"></i>
+                    <span id="theme-label">Latar Putih</span>
+                </button>
+
+                <button onclick="resetParameters()" class="p-2 rounded-xl bg-lab-card hover:bg-slate-200 dark:hover:bg-slate-700 border border-lab-border text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors" title="Reset ke Nilai Awal">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                </button>
+                <button onclick="toggleHelpModal()" class="px-3 py-2 rounded-xl bg-lab-card hover:bg-slate-200 dark:hover:bg-slate-700 border border-lab-border text-xs sm:text-sm font-medium text-sky-600 dark:text-sky-400 flex items-center gap-1.5 transition-colors">
+                    <i data-lucide="book-open" class="w-4 h-4"></i>
+                    <span>Panduan</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Fundamental Equation Banner (Persamaan Hukum II Kirchhoff) -->
+    <section class="max-w-7xl w-full mx-auto px-4 pt-4">
+        <div class="bg-lab-panel border border-lab-border rounded-2xl p-4 sm:p-5 shadow-md dark:shadow-xl">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                <div class="lg:col-span-6 space-y-1.5">
+                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30">
+                        Landasan Teori
+                    </span>
+                    <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                        Persamaan Hukum II Kirchhoff (Hukum Tegangan)
+                    </h2>
+                    <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                        "Di dalam sebuah rangkaian tertutup (loop), jumlah aljabar gaya gerak listrik (&varepsilon;) ditambah dengan jumlah aljabar penurunan tegangan (<i>I &middot; R</i>) sama dengan nol."
+                    </p>
+                </div>
+
+                <!-- Mathematical Equations Box -->
+                <div class="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="px-4 py-3 rounded-xl bg-lab-bg border border-lab-border flex flex-col items-center justify-center text-center overflow-x-auto">
+                        <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Bentuk Umum Loop</span>
+                        <div class="text-sm sm:text-base font-bold text-sky-600 dark:text-sky-400">
+                            $$\sum \varepsilon + \sum (I \cdot R) = 0$$
+                        </div>
+                    </div>
+                    <div class="px-4 py-3 rounded-xl bg-lab-bg border border-lab-border flex flex-col items-center justify-center text-center overflow-x-auto">
+                        <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Arus Rangkaian 1 Loop</span>
+                        <div class="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400">
+                            $$I = \frac{-\sum \varepsilon}{\sum R} = \frac{\varepsilon_1 - \varepsilon_2}{R_1 + R_2 + R_3}$$
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+        <!-- Left Column: Visual Canvas & Live Telemetry (7 cols on lg) -->
+        <div class="lg:col-span-7 flex flex-col gap-4">
+            
+            <!-- Canvas Card -->
+            <div class="bg-lab-panel border border-lab-border rounded-2xl overflow-hidden shadow-md dark:shadow-xl flex flex-col">
+                <!-- Canvas Top Bar -->
+                <div class="px-4 py-3 bg-lab-card/80 border-b border-lab-border flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span id="circuit-title-badge" class="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">Skema Rangkaian Tertutup Tunggal (1 Loop)</span>
+                    </div>
+
+                    <!-- Flow Type Toggle -->
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline">Visualisasi Aliran:</span>
+                        <button id="btn-flow-type" onclick="toggleFlowType()" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/25 transition-all flex items-center gap-1.5">
+                            <span id="flow-dot-indicator" class="w-2 h-2 rounded-full bg-amber-500 dark:bg-amber-400"></span>
+                            <span id="flow-type-label">Arus Konvensional (+ ke -)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Interactive Canvas Container -->
+                <div id="canvas-wrapper" class="relative w-full h-[360px] sm:h-[430px] bg-white dark:bg-[#070b14]">
+                    <canvas id="circuitCanvas" class="w-full h-full block"></canvas>
+                    
+                    <!-- Floating Legend Overlay -->
+                    <div class="absolute bottom-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+                        <div class="bg-lab-panel/90 backdrop-blur-md border border-lab-border px-3 py-1.5 rounded-xl text-[11px] text-slate-700 dark:text-slate-300 flex items-center gap-3 shadow-lg">
+                            <span class="flex items-center gap-1.5">
+                                <span class="w-3 h-0.5 bg-rose-500 dark:bg-rose-400 inline-block"></span> Kutub Positif (+)
+                            </span>
+                            <span class="flex items-center gap-1.5">
+                                <span class="w-3 h-0.5 bg-sky-600 dark:bg-sky-400 inline-block"></span> Kutub Negatif (-)
+                            </span>
+                            <span class="flex items-center gap-1.5">
+                                <span class="w-2.5 h-2.5 rounded-full border border-dashed border-emerald-600 dark:border-emerald-400 inline-block"></span> Arah Loop Acuan
+                            </span>
+                        </div>
+
+                        <!-- Pause/Play Animation Control -->
+                        <button id="btn-play-pause" onclick="togglePlayPause()" class="pointer-events-auto bg-lab-panel/90 hover:bg-lab-card backdrop-blur-md border border-lab-border px-3 py-1.5 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1.5 shadow-lg transition-colors">
+                            <i id="play-pause-icon" data-lucide="pause" class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400"></i>
+                            <span id="play-pause-text">Jeda Animasi</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Animation Speed & Loop Direction Controls -->
+                <div class="p-4 bg-lab-card/50 border-t border-lab-border grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                    <!-- Animation Speed Slider -->
+                    <div>
+                        <div class="flex justify-between text-xs mb-1.5">
+                            <span class="text-slate-600 dark:text-slate-400 font-medium flex items-center gap-1.5">
+                                <i data-lucide="gauge" class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400"></i> Kecepatan Animasi Muatan
+                            </span>
+                            <span id="speed-val-label" class="font-mono text-sky-600 dark:text-sky-400 font-semibold">1.0x</span>
+                        </div>
+                        <input type="range" id="slider-speed" min="0.2" max="3.0" step="0.1" value="1.0" class="w-full" oninput="updateSpeed(this.value)">
+                    </div>
+
+                    <!-- Loop Direction Selector -->
+                    <div id="loop-direction-controls" class="flex flex-col gap-1.5">
+                        <span class="text-xs text-slate-600 dark:text-slate-400 font-medium flex items-center gap-1.5">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></i> <span id="loop-dir-title">Arah Penelusuran Loop (Acuan):</span>
+                        </span>
+                        <div id="loop1-dir-group" class="grid grid-cols-2 gap-2">
+                            <button id="btn-loop1-cw" onclick="setLoopDirection(1, 'cw')" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/40 transition-all flex items-center justify-center gap-1">
+                                <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i> Searah Jarum Jam
+                            </button>
+                            <button id="btn-loop1-ccw" onclick="setLoopDirection(1, 'ccw')" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-lab-bg text-slate-600 dark:text-slate-400 border border-lab-border hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-1">
+                                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Berlawanan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Readings Summary Cards -->
+            <div id="telemetry-cards" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <!-- Dynamically populated by JS -->
+            </div>
+
+            <!-- Potential Profile Graph Card (Grafik Potensial Listrik Mengelilingi Loop) -->
+            <div class="bg-lab-panel border border-lab-border rounded-2xl p-4 sm:p-5 shadow-md dark:shadow-xl">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2.5 border-b border-lab-border">
+                    <div>
+                        <h2 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i data-lucide="trending-up" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                            Grafik Profil Potensial Listrik (V) Mengelilingi Loop
+                        </h2>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Bukti visual Hukum II Kirchhoff: potensial kembali ke titik awal (ΣV = 0 V)</p>
+                    </div>
+                    <!-- Tab selector for 2-loop mode -->
+                    <div id="graph-loop-tabs" class="hidden bg-lab-bg p-1 rounded-xl border border-lab-border flex items-center gap-1">
+                        <button id="btn-graph-loop1" onclick="setGraphLoop(1)" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-600 text-white transition-all">
+                            Loop I (A-B-E-F-A)
+                        </button>
+                        <button id="btn-graph-loop2" onclick="setGraphLoop(2)" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all">
+                            Loop II (B-C-D-E-B)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Graph Canvas Wrapper -->
+                <div id="graph-wrapper" class="relative w-full h-[230px] sm:h-[260px] bg-white dark:bg-[#070b14] rounded-xl border border-lab-border overflow-hidden">
+                    <canvas id="potentialGraphCanvas" class="w-full h-full block"></canvas>
+                </div>
+
+                <!-- Graph Legend -->
+                <div class="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                    <div class="flex items-center gap-4">
+                        <span class="flex items-center gap-1.5">
+                            <span class="w-3 h-0.5 bg-emerald-500 dark:bg-emerald-400 inline-block"></span> Perubahan Potensial V (Volt)
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-sky-600 dark:bg-sky-400 inline-block"></span> Titik Simpul (A, B, C...)
+                        </span>
+                    </div>
+                    <span class="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">V_akhir − V_awal = 0.00 V</span>
+                </div>
+            </div>
+
+            <!-- Step-by-Step Kirchhoff Calculation Panel -->
+            <div class="bg-lab-panel border border-lab-border rounded-2xl p-4 sm:p-5 shadow-md dark:shadow-xl">
+                <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-lab-border">
+                    <h2 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="calculator" class="w-4 h-4 text-sky-600 dark:text-sky-400"></i>
+                        Penurunan Rumus & Perhitungan
+                    </h2>
+                    <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">Otomatis</span>
+                </div>
+
+                <div id="calculation-steps" class="space-y-3 text-xs sm:text-sm leading-relaxed">
+                    <!-- Dynamically populated by JS -->
+                </div>
+            </div>
+
+            <!-- Validation Matrix Card (Perbandingan Teori Murni vs Keluaran Simulasi) -->
+            <div class="bg-lab-panel border border-lab-border rounded-2xl p-4 sm:p-5 shadow-md dark:shadow-xl">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2.5 border-b border-lab-border">
+                    <div>
+                        <h2 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                            Matriks Validasi Simulasi vs Perhitungan Teori Murni
+                        </h2>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Verifikasi akurasi algoritma simulasi terhadap rumus analitik Hukum Kirchhoff</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[11px] font-mono px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-semibold">
+                            Galat: 0.00%
+                        </span>
+                        <button onclick="copyValidationTable()" class="px-3 py-1.5 rounded-xl bg-lab-card hover:bg-slate-200 dark:hover:bg-slate-700 border border-lab-border text-slate-700 dark:text-slate-200 text-xs font-medium flex items-center gap-1.5 transition-colors">
+                            <i data-lucide="copy" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></i>
+                            <span id="copy-val-label">Salin Validasi</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-lab-border bg-lab-bg">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-lab-card text-amber-600 dark:text-amber-400 uppercase border-b border-lab-border">
+                                <th class="py-2.5 px-3">Parameter</th>
+                                <th class="py-2.5 px-3">Perhitungan Teori</th>
+                                <th class="py-2.5 px-3">Keluaran Simulasi</th>
+                                <th class="py-2.5 px-3">Galat (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="validation-table-body" class="divide-y divide-lab-border/60 text-slate-700 dark:text-slate-200">
+                            <!-- Dynamically populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PjBL Experiment Data Table & Code Inspector Panel -->
+            <div class="bg-lab-panel border border-lab-border rounded-2xl p-4 sm:p-5 shadow-md dark:shadow-xl">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2.5 border-b border-lab-border">
+                    <div>
+                        <h2 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i data-lucide="table" class="w-4 h-4 text-amber-600 dark:text-amber-400"></i>
+                            Tabel Data Pengujian Skenario (Untuk Laporan PjBL)
+                        </h2>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Catat hasil variasi parameter untuk dibandingkan dengan perhitungan manual</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="recordExperimentRow()" class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-700 dark:text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Catat Data
+                        </button>
+                        <button onclick="copyExperimentTable()" class="px-3 py-1.5 rounded-xl bg-lab-card hover:bg-slate-200 dark:hover:bg-slate-700 border border-lab-border text-slate-700 dark:text-slate-200 text-xs font-medium flex items-center gap-1.5 transition-colors">
+                            <i data-lucide="copy" class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400"></i> <span id="copy-table-label">Salin Tabel</span>
+                        </button>
+                        <button onclick="clearExperimentTable()" class="p-1.5 rounded-xl bg-lab-card hover:bg-rose-500/10 border border-lab-border text-slate-500 dark:text-slate-400 hover:text-rose-500 transition-colors" title="Hapus Semua Baris">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-lab-border bg-lab-bg">
+                    <table class="w-full text-left border-collapse text-xs font-mono">
+                        <thead>
+                            <tr class="bg-lab-card text-slate-700 dark:text-slate-300 border-b border-lab-border">
+                                <th class="py-2 px-2.5">No</th>
+                                <th class="py-2 px-2.5">Mode</th>
+                                <th class="py-2 px-2.5">ε₁ / ε₂ (V)</th>
+                                <th class="py-2 px-2.5">R₁ / R₂ / R₃ (Ω)</th>
+                                <th class="py-2 px-2.5">Hasil Arus (A)</th>
+                                <th class="py-2 px-2.5">Tegangan V₁,V₂,V₃ (V)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="experiment-table-body" class="divide-y divide-lab-border/60 text-slate-700 dark:text-slate-300">
+                            <tr>
+                                <td colspan="6" class="py-4 px-3 text-center text-slate-500 font-sans">
+                                    Belum ada data tercatat. Klik <strong class="text-amber-600 dark:text-amber-400">"Catat Data"</strong> saat menguji skenario.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Code Logic Explanation Accordion for Presentation -->
+                <div class="mt-4 pt-3 border-t border-lab-border">
+                    <button onclick="toggleCodeExplain()" class="w-full flex items-center justify-between text-left px-3 py-2 rounded-xl bg-lab-card/80 hover:bg-lab-card border border-lab-border transition-colors">
+                        <span class="text-xs sm:text-sm font-semibold text-sky-600 dark:text-sky-400 flex items-center gap-2">
+                            <i data-lucide="code-2" class="w-4 h-4"></i>
+                            Penjelasan Bagian Program Penentu Perhitungan (Bahan Presentasi)
+                        </span>
+                        <i id="code-explain-chevron" data-lucide="chevron-down" class="w-4 h-4 text-slate-500 dark:text-slate-400 transition-transform"></i>
+                    </button>
+                    <div id="code-explain-body" class="hidden mt-2.5 p-3.5 rounded-xl bg-lab-bg border border-lab-border text-xs space-y-2.5 text-slate-700 dark:text-slate-300">
+                        <p class="leading-relaxed">
+                            Perilaku fisika rangkaian dihitung secara real-time di dalam fungsi <code class="text-amber-600 dark:text-amber-400 font-mono">calculatePhysics()</code> menggunakan hukum kekekalan energi listrik (<code class="text-sky-600 dark:text-sky-400 font-mono">Σε + Σ(I·R) = 0</code>):
+                        </p>
+                        <pre class="p-3 rounded-lg bg-lab-panel border border-lab-border overflow-x-auto font-mono text-[11px] text-emerald-700 dark:text-emerald-300 leading-relaxed">// 1. Mode 1 Loop: ΣE + I * R_total = 0
+const R_total = R1 + R2 + R3;
+const termE1 = loop1Dir === 'cw' ? -E1 : +E1;
+const termE2 = loop1Dir === 'cw' ? +E2 : -E2;
+const I_loop = -(termE1 + termE2) / R_total;
+
+// 2. Mode 2 Loop: Eliminasi Matriks 2x2 (Arus Mesh I1 & I2)
+const det = (R1 + R2) * (R2 + R3) - R2 * R2;
+const I1_cw = (E1 * (R2 + R3) - E2 * R2) / det;
+const I2_cw = (-(R1 + R2) * E2 + R2 * E1) / det;
+const I_mid_down = I1_cw - I2_cw; // Hukum I Kirchhoff di simpul B</pre>
+                        <ul class="list-disc pl-4 space-y-1 text-[11px] text-slate-600 dark:text-slate-400">
+                            <li><strong class="text-slate-900 dark:text-slate-200">Tanda Positif/Negatif GGL:</strong> Ditentukan oleh perbandingan polaritas baterai terhadap arah penelusuran loop (<code class="text-sky-600 dark:text-sky-400">loop1Dir</code>).</li>
+                            <li><strong class="text-slate-900 dark:text-slate-200">Kecepatan & Arah Animasi:</strong> Fungsi <code class="text-amber-600 dark:text-amber-400">drawParticlesOnPath()</code> menggerakkan titik muatan sebanding dengan nilai <code class="text-sky-600 dark:text-sky-400">I</code>; jika <code class="text-sky-600 dark:text-sky-400">I &lt; 0</code>, arah gerak otomatis berbalik.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Interactive Parameter Controls & Presets (5 cols on lg) -->
+        <div class="lg:col-span-5 flex flex-col gap-4">
+
+            <!-- Voltage Sources (GGL / Baterai) Card -->
+            <div class="bg-lab-panel border border-lab-border rounded-2xl p-4 sm:p-5 shadow-md dark:shadow-xl">
+                <div class="flex items-center justify-between mb-4 pb-2.5 border-b border-lab-border">
+                    <h2 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="battery-charging" class="w-4 h-4 text-rose-500 dark:text-rose-400"></i>
+                        Sumber Tegangan / GGL (ε)
+                    </h2>
+                    <span class="text-xs text-slate-500 dark:text-slate-400">Ubah nilai atau balik kutub</span>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- Parameter E1 -->
+                    <div class="p-3.5 rounded-xl bg-lab-bg border border-lab-border">
+                        <div class="flex items-center justify-between gap-2 mb-2">
+                            <div>
+                                <span class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">GGL 1 (ε₁)</span>
+                                <span id="polarity-info-E1" class="ml-2 text-[11px] px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">Kutub (+) di Atas</span>
+                            </div>
+                            <button onclick="flipPolarity('E1')" class="px-2.5 py-1 rounded-lg bg-lab-card hover:bg-slate-200 dark:hover:bg-slate-700 border border-lab-border text-xs font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1 transition-colors" title="Balik Polaritas Baterai 1">
+                                <i data-lucide="arrow-up-down" class="w-3.5 h-3.5 text-rose-500 dark:text-rose-400"></i> Balik Kutub
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <input type="range" id="slider-E1" min="-24" max="24" step="1" value="12" class="flex-1" oninput="updateParam('E1', this.value)">
+                            <div class="flex items-center bg-lab-panel border border-lab-border rounded-lg px-2 py-1 w-24">
+                                <input type="number" id="input-E1" min="-24" max="24" step="1" value="12" class="w-full bg-transparent text-right font-mono text-sm font-bold text-slate-900 dark:text-white focus:outline-none" onchange="updateParam('E1', this.value)">
+                                <span class="text-xs text-slate-500 dark:text-slate-400 ml-1">V</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Parameter E2 -->
+                    <div class="p-3.5 rounded-xl bg-lab-bg border border-lab-border">
+                        <div class="flex items-center justify-between gap-2 mb-2">
+                            <div>
+                                <span class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">GGL 2 (ε₂)</span>
+                                <span id="polarity-info-E2" class="ml-2 text-[11px] px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">Kutub (+) di Atas</span>
+                            </div>
+                            <button onclick="flipPolarity('E2')" class="px-2.5 py-1 rounded-lg bg-lab-card hover:bg-slate-200 dark:hover:bg-slate-700 border border-lab-border text-xs font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1 transition-colors" title="Balik Polaritas Baterai 2">
+                                <i data-lucide="arrow-up-down" class="w-3.5 h-3.5 text-rose-500 dark:text-rose-400"></i> Balik Kutub
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <input type="range" id="slider-E2" min="-24" max="24" step="1" value="6" class="flex-1" oninput="updateParam('E2', this.value)">
+                            <div class="flex items-center bg-lab-panel border border-lab-border rounded-lg px-2 py-1 w-24">
+                                <input type="number" id="input-E2" min="-24" max="24" step="1" value="6" class="w-full bg-transparent text-right font-mono text-sm font-bold text-slate-900 dark:text-white focus:outline-none" onchange="updateParam('E2', this.value)">
+                                <span class="text-xs text-slate-500 dark:text-slate-400 ml-1">V</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resistors (Hambatan) Card -->
+            <div class="bg-lab-panel border border-lab-border rounded-2xl p-4 sm:p-5 shadow-md dark:shadow-xl">
+                <div class="flex items-center justify-between mb-4 pb-2.5 border-b border-lab-border">
+                    <h2 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="cpu" class="w-4 h-4 text-sky-600 dark:text-sky-400"></i>
+                        Hambatan Listrik / Resistor (R)
+                    </h2>
+                    <span class="text-xs text-slate-500 dark:text-slate-400">1 Ω – 50 Ω</span>
+                </div>
+
+                <div class="space-y-3.5">
+                    <!-- Resistor R1 -->
+                    <div class="p-3 rounded-xl bg-lab-bg border border-lab-border">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <span id="label-R1-loc" class="text-xs font-semibold text-slate-700 dark:text-slate-200">Hambatan 1 (Atas)</span>
+                            <span class="text-[11px] font-mono text-sky-600 dark:text-sky-400">R₁</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <input type="range" id="slider-R1" min="1" max="50" step="1" value="4" class="flex-1" oninput="updateParam('R1', this.value)">
+                            <div class="flex items-center bg-lab-panel border border-lab-border rounded-lg px-2 py-1 w-24">
+                                <input type="number" id="input-R1" min="1" max="50" step="1" value="4" class="w-full bg-transparent text-right font-mono text-sm font-bold text-sky-600 dark:text-sky-400 focus:outline-none" onchange="updateParam('R1', this.value)">
+                                <span class="text-xs text-slate-500 dark:text-slate-400 ml-1">Ω</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resistor R2 -->
+                    <div class="p-3 rounded-xl bg-lab-bg border border-lab-border">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <span id="label-R2-loc" class="text-xs font-semibold text-slate-700 dark:text-slate-200">Hambatan 2 (Bawah Kiri)</span>
+                            <span class="text-[11px] font-mono text-sky-600 dark:text-sky-400">R₂</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <input type="range" id="slider-R2" min="1" max="50" step="1" value="6" class="flex-1" oninput="updateParam('R2', this.value)">
+                            <div class="flex items-center bg-lab-panel border border-lab-border rounded-lg px-2 py-1 w-24">
+                                <input type="number" id="input-R2" min="1" max="50" step="1" value="6" class="w-full bg-transparent text-right font-mono text-sm font-bold text-sky-600 dark:text-sky-400 focus:outline-none" onchange="updateParam('R2', this.value)">
+                                <span class="text-xs text-slate-500 dark:text-slate-400 ml-1">Ω</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resistor R3 -->
+                    <div class="p-3 rounded-xl bg-lab-bg border border-lab-border">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <span id="label-R3-loc" class="text-xs font-semibold text-slate-700 dark:text-slate-200">Hambatan 3 (Bawah Kanan)</span>
+                            <span class="text-[11px] font-mono text-sky-600 dark:text-sky-400">R₃</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <input type="range" id="slider-R3" min="1" max="50" step="1" value="2" class="flex-1" oninput="updateParam('R3', this.value)">
+                            <div class="flex items-center bg-lab-panel border border-lab-border rounded-lg px-2 py-1 w-24">
+                                <input type="number" id="input-R3" min="1" max="50" step="1" value="2" class="w-full bg-transparent text-right font-mono text-sm font-bold text-sky-600 dark:text-sky-400 focus:outline-none" onchange="updateParam('R3', this.value)">
+                                <span class="text-xs text-slate-500 dark:text-slate-400 ml-1">Ω</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Experiment Scenarios / Presets Card -->
+            <div class="bg-lab-panel border border-lab-border rounded-2xl p-4 sm:p-5 shadow-md dark:shadow-xl">
+                <h2 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
+                    <i data-lucide="flask-conical" class="w-4 h-4 text-purple-600 dark:text-purple-400"></i>
+                    Skenario Eksperimen Cepat
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <button onclick="applyPreset('setimbang')" class="p-2.5 rounded-xl bg-lab-bg hover:bg-lab-card border border-lab-border text-left transition-all group">
+                        <div class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-sky-600 dark:group-hover:text-sky-400">1. GGL Setimbang (I = 0)</div>
+                        <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">ε₁ = ε₂ = 12V saling melawan</div>
+                    </button>
+                    <button onclick="applyPreset('seri_searah')" class="p-2.5 rounded-xl bg-lab-bg hover:bg-lab-card border border-lab-border text-left transition-all group">
+                        <div class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-sky-600 dark:group-hover:text-sky-400">2. Baterai Seri Searah</div>
+                        <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">ε₁ & ε₂ saling menguatkan</div>
+                    </button>
+                    <button onclick="applyPreset('arus_balik')" class="p-2.5 rounded-xl bg-lab-bg hover:bg-lab-card border border-lab-border text-left transition-all group">
+                        <div class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-sky-600 dark:group-hover:text-sky-400">3. Arus Berlawanan Loop</div>
+                        <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Nilai I negatif (ε₂ > ε₁)</div>
+                    </button>
+                    <button onclick="applyPreset('jembatan_2loop')" class="p-2.5 rounded-xl bg-lab-bg hover:bg-lab-card border border-lab-border text-left transition-all group">
+                        <div class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-sky-600 dark:group-hover:text-sky-400">4. Percabangan 2 Loop</div>
+                        <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Uji Hukum I & II Kirchhoff</div>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Guide / Concept Modal -->
+    <div id="help-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-lab-panel border border-lab-border rounded-2xl max-w-2xl w-full max-h-[88vh] overflow-y-auto p-5 sm:p-6 shadow-2xl">
+            <div class="flex items-center justify-between pb-3 border-b border-lab-border">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <i data-lucide="book-open" class="w-5 h-5 text-sky-600 dark:text-sky-400"></i>
+                    Konsep & Aturan Tanda Hukum II Kirchhoff
+                </h3>
+                <button onclick="toggleHelpModal()" class="p-1.5 rounded-lg bg-lab-card hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 mt-4 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                <div class="p-3.5 rounded-xl bg-sky-500/10 border border-sky-500/30">
+                    <p class="font-semibold text-sky-700 dark:text-sky-300 mb-1">Bunyi Hukum II Kirchhoff (Hukum Tegangan / Loop):</p>
+                    <p>"Jumlah aljabar perubahan tegangan (beda potensial) yang mengelilingi suatu lintasan tertutup (loop) dalam suatu rangkaian listrik selalu sama dengan nol."</p>
+                    <p class="font-mono font-bold text-slate-900 dark:text-white mt-2 text-center text-base">$$\sum \varepsilon + \sum (I \cdot R) = 0$$</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="p-3.5 rounded-xl bg-lab-bg border border-lab-border">
+                        <h4 class="font-bold text-rose-600 dark:text-rose-400 mb-1.5">Aturan Tanda GGL (ε):</h4>
+                        <ul class="list-disc pl-4 space-y-1 text-xs">
+                            <li>Jika arah loop bertemu kutub <strong>negatif (−)</strong> lebih dulu lalu ke <strong>positif (+)</strong>, maka <strong>ε bertanda negatif (−)</strong> dalam persamaan <code>ΣE + ΣIR = 0</code> (potensial naik).</li>
+                            <li>Jika arah loop bertemu kutub <strong>positif (+)</strong> lebih dulu lalu ke <strong>negatif (−)</strong>, maka <strong>ε bertanda positif (+)</strong> (potensial turun).</li>
+                        </ul>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-lab-bg border border-lab-border">
+                        <h4 class="font-bold text-amber-600 dark:text-amber-400 mb-1.5">Aturan Tanda Kuat Arus (I):</h4>
+                        <ul class="list-disc pl-4 space-y-1 text-xs">
+                            <li>Jika arah penelusuran loop <strong>searah</strong> dengan arah arus <strong>I</strong>, maka <strong>+ I·R</strong>.</li>
+                            <li>Jika hasil akhir perhitungan <strong>I bernilai negatif (−)</strong>, artinya arah aliran arus sebenarnya <strong>berlawanan</strong> dengan arah loop acuan yang dimisalkan.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-lab-bg border border-lab-border">
+                    <h4 class="font-bold text-cyan-600 dark:text-cyan-400 mb-1">Perbedaan Arus Konvensional vs Aliran Elektron:</h4>
+                    <p class="text-xs"><strong>Arus Konvensional</strong> didefinisikan mengalir dari potensial tinggi (kutub +) menuju potensial rendah (kutub −). Sebaliknya, secara fisis <strong>Elektron</strong> bermuatan negatif sehingga bergerak dari kutub negatif (−) menuju kutub positif (+).</p>
+                </div>
+            </div>
+
+            <div class="mt-5 flex justify-end">
+                <button onclick="toggleHelpModal()" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs sm:text-sm font-semibold transition-colors">
+                    Mengerti & Lanjutkan Simulasi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Physics Engine & Interactive Canvas Renderer -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Application State
+        const state = {
+            theme: 'dark',        // 'dark' (Hitam) or 'light' (Putih)
+            mode: 1,              // 1 = Single Loop, 2 = Two Loops
+            graphLoop: 1,         // Which loop to plot in 2-loop mode (1 or 2)
+            E1: 12,               // Volts (-24 to +24)
+            E2: 6,                // Volts (-24 to +24)
+            R1: 4,                // Ohms (1 to 50)
+            R2: 6,                // Ohms (1 to 50)
+            R3: 2,                // Ohms (1 to 50)
+            loop1Dir: 'cw',       // 'cw' (clockwise) or 'ccw' (counter-clockwise)
+            loop2Dir: 'cw',       // 'cw' or 'ccw' for 2-loop mode
+            flowType: 'conventional', // 'conventional' (+ to -) or 'electron' (- to +)
+            speed: 1.0,           // Animation speed multiplier
+            isPlaying: true,      // Play/pause state
+            animPhase: 0,         // Continuous phase offset for charge particles
+            physics: {}           // Computed currents, voltages, and equations
+        };
+
+        // Canvas Setup
+        const canvas = document.getElementById('circuitCanvas');
+        const ctx = canvas.getContext('2d');
+        const graphCanvas = document.getElementById('potentialGraphCanvas');
+        const gCtx = graphCanvas.getContext('2d');
+        let dpr = window.devicePixelRatio || 1;
+
+        function resizeCanvas() {
+            dpr = window.devicePixelRatio || 1;
+
+            const wrapper = document.getElementById('canvas-wrapper');
+            const rect = wrapper.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            const gWrapper = document.getElementById('graph-wrapper');
+            if (gWrapper) {
+                const gRect = gWrapper.getBoundingClientRect();
+                graphCanvas.width = gRect.width * dpr;
+                graphCanvas.height = gRect.height * dpr;
+                gCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            }
+            drawPotentialGraph();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // Physics Calculation Engine
+        function calculatePhysics() {
+            const { mode, E1, E2, R1, R2, R3, loop1Dir, loop2Dir } = state;
+
+            if (mode === 1) {
+                // ==========================================
+                // MODE 1: SINGLE LOOP CIRCUIT (Nodes A -> B -> C -> D -> E -> A)
+                // A (Bottom-Left) --[E1]--> B (Top-Left) --[R1]--> C (Top-Right)
+                // C (Top-Right) --[E2]--> D (Bottom-Right) --[R3]--> E (Bottom-Mid) --[R2]--> A (Bottom-Left)
+                // ==========================================
+                const R_total = R1 + R2 + R3;
+
+                // Tracing CW (A -> B -> C -> D -> E -> A):
+                // E1 (+ at top when E1 > 0): going A->B moves from - to + => potential RISES by +E1 (in KVL sum: -E1 + I*R = 0 => I_cw = (E1 - E2)/R_total)
+                const termE1 = loop1Dir === 'cw' ? -E1 : +E1;
+                const termE2 = loop1Dir === 'cw' ? +E2 : -E2;
+
+                const sumE = termE1 + termE2;
+                // ΣE + I * R_total = 0  =>  I = -sumE / R_total
+                const I_loop = -sumE / R_total; // Current relative to chosen loop direction
+                const I_cw = loop1Dir === 'cw' ? I_loop : -I_loop; // True clockwise current
+
+                const V1 = Math.abs(I_loop) * R1;
+                const V2 = Math.abs(I_loop) * R2;
+                const V3 = Math.abs(I_loop) * R3;
+                const kvlSum = sumE + I_loop * R_total;
+
+                // Potential Profile Points (Tracing CW starting at Node A = 0 V):
+                // 1. At A: V = 0
+                // 2. Across E1 (A -> B): ΔV = +E1 (since + is at B when E1 > 0)
+                // 3. Across R1 (B -> C): ΔV = -I_cw * R1
+                // 4. Across E2 (C -> D): ΔV = -E2 (since + is at C when E2 > 0, going C->D goes + to -)
+                // 5. Across R3 (D -> E): ΔV = -I_cw * R3
+                // 6. Across R2 (E -> A): ΔV = -I_cw * R2  => returns identically to 0 V!
+                const vA = 0;
+                const vB = vA + E1;
+                const vC = vB - I_cw * R1;
+                const vD = vC - E2;
+                const vE = vD - I_cw * R3;
+                const vA_end = vE - I_cw * R2;
+
+                const potentialProfile = [
+                    { node: 'A', label: 'Titik A (Mulai)', v: vA, comp: 'Referensi 0V' },
+                    { node: 'B', label: 'Titik B (Setelah ε₁)', v: vB, comp: `ε₁ (${E1 >= 0 ? '+' : ''}${E1}V)` },
+                    { node: 'C', label: 'Titik C (Setelah R₁)', v: vC, comp: `−I·R₁ (${(-I_cw * R1).toFixed(2)}V)` },
+                    { node: 'D', label: 'Titik D (Setelah ε₂)', v: vD, comp: `ε₂ (${-E2 >= 0 ? '+' : ''}${-E2}V)` },
+                    { node: 'E', label: 'Titik E (Setelah R₃)', v: vE, comp: `−I·R₃ (${(-I_cw * R3).toFixed(2)}V)` },
+                    { node: 'A', label: 'Titik A (Kembali)', v: vA_end, comp: `−I·R₂ (${(-I_cw * R2).toFixed(2)}V)` }
+                ];
+
+                state.physics = {
+                    mode: 1,
+                    R_total,
+                    termE1,
+                    termE2,
+                    sumE,
+                    I_loop,
+                    I_cw,
+                    V1,
+                    V2,
+                    V3,
+                    kvlSum,
+                    potentialProfile
+                };
+            } else {
+                // ==========================================
+                // MODE 2: TWO-LOOP CIRCUIT (Nodes A, B, C on Top; F, E, D on Bottom)
+                // Left Branch: F (Bottom-Left) --[E1, R1]--> A (Top-Left) --wire--> B (Top-Mid)
+                // Middle Branch: B (Top-Mid) --[R2]--> E (Bottom-Mid)
+                // Right Branch: D (Bottom-Right) --[E2, R3]--> C (Top-Right) --wire--> B (Top-Mid)
+                // Exact 2x2 Determinant / Nodal Solution:
+                // ==========================================
+                const det = (R1 + R2) * (R2 + R3) - R2 * R2; // R1*R2 + R1*R3 + R2*R3 > 0 always
+                // Using CW mesh currents I1_cw (Loop 1: F-A-B-E-F) and I2_cw (Loop 2: E-B-C-D-E):
+                // Loop 1 (CW): +E1 - I1_cw*R1 - (I1_cw - I2_cw)*R2 = 0 => (R1+R2)*I1_cw - R2*I2_cw = E1
+                // Loop 2 (CW): -E2 - (I2_cw - I1_cw)*R2 - I2_cw*R3 = 0 => -R2*I1_cw + (R2+R3)*I2_cw = -E2
+                const I1_cw = (E1 * (R2 + R3) + (-E2) * R2) / det;
+                const I2_cw = ((R1 + R2) * (-E2) + R2 * E1) / det;
+
+                const I_left_up = I1_cw;                 // Upward current on left branch (F -> A -> B)
+                const I_mid_down = I1_cw - I2_cw;        // Downward current on middle branch (B -> E)
+                const I_right_up = -I2_cw;               // Upward current on right branch (D -> C -> B)
+
+                // Mesh currents expressed relative to user's chosen loop1Dir & loop2Dir
+                const I1 = loop1Dir === 'cw' ? I1_cw : -I1_cw;
+                const I2 = loop2Dir === 'cw' ? I2_cw : -I2_cw;
+
+                const V1 = Math.abs(I_left_up) * R1;
+                const V2 = Math.abs(I_mid_down) * R2;
+                const V3 = Math.abs(I_right_up) * R3;
+
+                // Potential Profile for Loop 1 (Clockwise: F -> G(after E1) -> A(after R1) -> B -> E(after R2) -> F)
+                const vF1 = 0;
+                const vAfterE1 = vF1 + E1;
+                const vA = vAfterE1 - I_left_up * R1; // Node B has same potential as A
+                const vE1 = vA - I_mid_down * R2;     // Node F has same potential as E (= 0 V)
+                const profileLoop1 = [
+                    { node: 'F', label: 'Titik F (Mulai)', v: vF1, comp: 'Referensi 0V' },
+                    { node: 'A\'', label: 'Setelah ε₁', v: vAfterE1, comp: `ε₁ (${E1 >= 0 ? '+' : ''}${E1}V)` },
+                    { node: 'A / B', label: 'Titik A & B (Setelah R₁)', v: vA, comp: `−I₁·R₁ (${(-I_left_up * R1).toFixed(2)}V)` },
+                    { node: 'E', label: 'Titik E (Setelah R₂)', v: vE1, comp: `−I_tengah·R₂ (${(-I_mid_down * R2).toFixed(2)}V)` },
+                    { node: 'F', label: 'Titik F (Kembali)', v: vE1, comp: 'Kawat Penghubung (0V)' }
+                ];
+
+                // Potential Profile for Loop 2 (Clockwise: E -> B(up through R2) -> C -> D'(after E2) -> D(after R3) -> E)
+                const vE2 = 0;
+                const vB2 = vE2 + I_mid_down * R2; // Going UP against I_mid_down raises potential by +I_mid_down*R2
+                const vAfterE2 = vB2 - E2;         // Going DOWN across E2 (+ to -) drops potential by -E2
+                const vD2 = vAfterE2 + I_right_up * R3; // Going DOWN against I_right_up raises potential by +I_right_up*R3
+                const profileLoop2 = [
+                    { node: 'E', label: 'Titik E (Mulai)', v: vE2, comp: 'Referensi 0V' },
+                    { node: 'B / C', label: 'Titik B & C (Naik R₂)', v: vB2, comp: `+I_tengah·R₂ (${(I_mid_down * R2).toFixed(2)}V)` },
+                    { node: 'D\'', label: 'Setelah ε₂', v: vAfterE2, comp: `−ε₂ (${-E2 >= 0 ? '+' : ''}${-E2}V)` },
+                    { node: 'D', label: 'Titik D (Setelah R₃)', v: vD2, comp: `+I₃·R₃ (${(I_right_up * R3).toFixed(2)}V)` },
+                    { node: 'E', label: 'Titik E (Kembali)', v: vD2, comp: 'Kawat Penghubung (0V)' }
+                ];
+
+                state.physics = {
+                    mode: 2,
+                    I_left_up,
+                    I_mid_down,
+                    I_right_up,
+                    I1,
+                    I2,
+                    V1,
+                    V2,
+                    V3,
+                    profileLoop1,
+                    profileLoop2
+                };
+            }
+        }
+
+        // Draw Potential Loop Graph (V vs Node Position)
+        function drawPotentialGraph() {
+            if (!gCtx || !state.physics) return;
+            const gWrapper = document.getElementById('graph-wrapper');
+            const W = gWrapper.clientWidth;
+            const H = gWrapper.clientHeight;
+            const isDark = state.theme === 'dark';
+
+            gCtx.fillStyle = isDark ? '#070b14' : '#ffffff';
+            gCtx.fillRect(0, 0, W, H);
+
+            const profile = state.mode === 1
+                ? state.physics.potentialProfile
+                : (state.graphLoop === 1 ? state.physics.profileLoop1 : state.physics.profileLoop2);
+
+            if (!profile || profile.length === 0) return;
+
+            const padLeft = 54;
+            const padRight = 28;
+            const padTop = 28;
+            const padBottom = 46;
+            const plotW = W - padLeft - padRight;
+            const plotH = H - padTop - padBottom;
+
+            // Determine Y-axis bounds symmetrically or cleanly around data
+            const vals = profile.map(p => p.v);
+            let maxV = Math.max(...vals, 4);
+            let minV = Math.min(...vals, -4);
+            const absMax = Math.max(Math.abs(maxV), Math.abs(minV));
+            const yLimit = Math.ceil(absMax / 4) * 4 || 4;
+            maxV = yLimit;
+            minV = -yLimit;
+
+            const mapX = (idx) => padLeft + (idx / (profile.length - 1)) * plotW;
+            const mapY = (v) => padTop + ((maxV - v) / (maxV - minV)) * plotH;
+
+            // Horizontal Gridlines & Y-Axis Labels
+            gCtx.font = '11px JetBrains Mono, monospace';
+            gCtx.textAlign = 'right';
+            gCtx.textBaseline = 'middle';
+
+            const steps = 4;
+            for (let i = 0; i <= steps; i++) {
+                const vVal = maxV - (i / steps) * (maxV - minV);
+                const y = mapY(vVal);
+
+                gCtx.beginPath();
+                gCtx.strokeStyle = Math.abs(vVal) < 1e-6
+                    ? (isDark ? 'rgba(56, 189, 248, 0.45)' : 'rgba(2, 132, 199, 0.45)')
+                    : (isDark ? 'rgba(51, 65, 85, 0.45)' : 'rgba(203, 213, 225, 0.7)');
+                gCtx.lineWidth = Math.abs(vVal) < 1e-6 ? 1.5 : 1;
+                if (Math.abs(vVal) < 1e-6) gCtx.setLineDash([4, 4]);
+                gCtx.moveTo(padLeft, y);
+                gCtx.lineTo(W - padRight, y);
+                gCtx.stroke();
+                gCtx.setLineDash([]);
+
+                gCtx.fillStyle = Math.abs(vVal) < 1e-6
+                    ? (isDark ? '#38bdf8' : '#0284c7')
+                    : (isDark ? '#94a3b8' : '#475569');
+                gCtx.fillText(`${vVal.toFixed(0)}V`, padLeft - 8, y);
+            }
+
+            // Vertical Node Gridlines & X-Axis Labels
+            gCtx.textAlign = 'center';
+            profile.forEach((pt, idx) => {
+                const x = mapX(idx);
+                gCtx.beginPath();
+                gCtx.strokeStyle = isDark ? 'rgba(51, 65, 85, 0.35)' : 'rgba(203, 213, 225, 0.55)';
+                gCtx.lineWidth = 1;
+                gCtx.moveTo(x, padTop);
+                gCtx.lineTo(x, H - padBottom);
+                gCtx.stroke();
+
+                // Node letter on X axis
+                gCtx.font = 'bold 11px Inter, sans-serif';
+                gCtx.fillStyle = isDark ? '#e2e8f0' : '#0f172a';
+                gCtx.fillText(pt.node, x, H - padBottom + 16);
+
+                // Component delta label below node
+                if (idx > 0) {
+                    const prevX = mapX(idx - 1);
+                    const midSegX = (prevX + x) / 2;
+                    gCtx.font = '10px JetBrains Mono, monospace';
+                    gCtx.fillStyle = isDark ? '#94a3b8' : '#475569';
+                    gCtx.fillText(pt.comp.split(' ')[0], midSegX, H - padBottom + 32);
+                }
+            });
+
+            // Shaded area under/over 0V baseline
+            const yZero = mapY(0);
+            gCtx.beginPath();
+            gCtx.moveTo(mapX(0), yZero);
+            profile.forEach((pt, idx) => {
+                gCtx.lineTo(mapX(idx), mapY(pt.v));
+            });
+            gCtx.lineTo(mapX(profile.length - 1), yZero);
+            gCtx.closePath();
+            gCtx.fillStyle = isDark ? 'rgba(52, 211, 153, 0.12)' : 'rgba(16, 185, 129, 0.15)';
+            gCtx.fill();
+
+            // Main Potential Line
+            gCtx.beginPath();
+            gCtx.strokeStyle = isDark ? '#34d399' : '#059669';
+            gCtx.lineWidth = 3;
+            gCtx.lineJoin = 'round';
+            gCtx.shadowColor = isDark ? 'rgba(52, 211, 153, 0.5)' : 'rgba(5, 150, 105, 0.25)';
+            gCtx.shadowBlur = 8;
+            profile.forEach((pt, idx) => {
+                const x = mapX(idx);
+                const y = mapY(pt.v);
+                if (idx === 0) gCtx.moveTo(x, y);
+                else gCtx.lineTo(x, y);
+            });
+            gCtx.stroke();
+            gCtx.shadowBlur = 0;
+
+            // Plot Data Points & Voltage Value Callouts
+            profile.forEach((pt, idx) => {
+                const x = mapX(idx);
+                const y = mapY(pt.v);
+
+                gCtx.beginPath();
+                gCtx.fillStyle = idx === 0 || idx === profile.length - 1
+                    ? (isDark ? '#fbbf24' : '#d97706')
+                    : (isDark ? '#38bdf8' : '#0284c7');
+                gCtx.strokeStyle = isDark ? '#070b14' : '#ffffff';
+                gCtx.lineWidth = 2;
+                gCtx.arc(x, y, 5, 0, Math.PI * 2);
+                gCtx.fill();
+                gCtx.stroke();
+
+                // Voltage readout above/below point
+                const offsetY = pt.v >= 0 ? -12 : 14;
+                gCtx.font = 'bold 11px JetBrains Mono, monospace';
+                gCtx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
+                gCtx.textAlign = 'center';
+                gCtx.fillText(`${pt.v.toFixed(1)}V`, x, Math.max(14, Math.min(H - padBottom - 8, y + offsetY)));
+            });
+        }
+
+        function setGraphLoop(loopNum) {
+            state.graphLoop = loopNum;
+            const b1 = document.getElementById('btn-graph-loop1');
+            const b2 = document.getElementById('btn-graph-loop2');
+            if (loopNum === 1) {
+                b1.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-600 text-white transition-all';
+                b2.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all';
+            } else {
+                b2.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-600 text-white transition-all';
+                b1.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all';
+            }
+            drawPotentialGraph();
+        }
+
+        // Update UI Panels (Telemetry Cards & Step-by-Step Math)
+        function updateUI() {
+            calculatePhysics();
+            drawPotentialGraph();
+            const p = state.physics;
+
+            // Show/hide 2-loop graph tab selector
+            const graphTabs = document.getElementById('graph-loop-tabs');
+            if (graphTabs) {
+                if (state.mode === 2) graphTabs.classList.remove('hidden');
+                else graphTabs.classList.add('hidden');
+            }
+
+            // Update Polarity text indicators
+            document.getElementById('polarity-info-E1').textContent = state.E1 > 0 ? 'Kutub (+) di Atas' : (state.E1 < 0 ? 'Kutub (+) di Bawah' : 'Netral (0 V)');
+            document.getElementById('polarity-info-E2').textContent = state.E2 > 0 ? 'Kutub (+) di Atas' : (state.E2 < 0 ? 'Kutub (+) di Bawah' : 'Netral (0 V)');
+
+            const telemetryContainer = document.getElementById('telemetry-cards');
+            const calcContainer = document.getElementById('calculation-steps');
+
+            if (state.mode === 1) {
+                const I_abs = Math.abs(p.I_loop);
+                const dirText = Math.abs(p.I_cw) < 1e-6 ? 'Diam (0 A)' : (p.I_cw > 0 ? 'Searah Jarum Jam ↻' : 'Berlawanan Jarum Jam ↺');
+                const signMatchText = Math.abs(p.I_loop) < 1e-6 ? 'Setimbang' : (p.I_loop > 0 ? 'Searah Loop Acuan' : 'Berlawanan Loop Acuan');
+
+                telemetryContainer.innerHTML = `
+                    <div class="bg-lab-panel border border-lab-border rounded-xl p-3 shadow-sm dark:shadow">
+                        <div class="text-[11px] text-slate-500 dark:text-slate-400">Kuat Arus Total (I)</div>
+                        <div class="text-base sm:text-lg font-mono font-bold text-amber-600 dark:text-amber-400 mt-0.5">${p.I_loop.toFixed(2)} A</div>
+                        <div class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">${(p.I_loop * 1000).toFixed(0)} mA • ${signMatchText}</div>
+                    </div>
+                    <div class="bg-lab-panel border border-lab-border rounded-xl p-3 shadow-sm dark:shadow">
+                        <div class="text-[11px] text-slate-500 dark:text-slate-400">Arah Aliran Fisik</div>
+                        <div class="text-xs sm:text-sm font-bold text-sky-600 dark:text-sky-400 mt-1">${dirText}</div>
+                        <div class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Hambatan Total: ${p.R_total} Ω</div>
+                    </div>
+                    <div class="bg-lab-panel border border-lab-border rounded-xl p-3 shadow-sm dark:shadow">
+                        <div class="text-[11px] text-slate-500 dark:text-slate-400">Tegangan R₁ & R₂</div>
+                        <div class="text-xs sm:text-sm font-mono font-bold text-slate-800 dark:text-slate-200 mt-1">V₁=${p.V1.toFixed(2)}V | V₂=${p.V2.toFixed(2)}V</div>
+                        <div class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">V = |I| · R</div>
+                    </div>
+                    <div class="bg-lab-panel border border-lab-border rounded-xl p-3 shadow-sm dark:shadow">
+                        <div class="text-[11px] text-slate-500 dark:text-slate-400">Tegangan R₃ & ΣV</div>
+                        <div class="text-xs sm:text-sm font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-1">V₃=${p.V3.toFixed(2)}V</div>
+                        <div class="text-[10px] text-emerald-600 dark:text-emerald-400/80 mt-1">ΣV Loop = ${Math.abs(p.kvlSum).toFixed(2)} V ✓</div>
+                    </div>
+                `;
+
+                const loopLabel = state.loop1Dir === 'cw' ? 'Searah Jarum Jam (CW)' : 'Berlawanan Jarum Jam (CCW)';
+                const fmtSigned = (num) => (num >= 0 ? `+ ${num}` : `- ${Math.abs(num)}`);
+                const fmtFirst = (num) => (num >= 0 ? `${num}` : `-${Math.abs(num)}`);
+
+                calcContainer.innerHTML = `
+                    <div class="p-3.5 rounded-xl bg-lab-bg border border-lab-border space-y-1.5">
+                        <div class="text-slate-500 dark:text-slate-400 text-xs font-semibold">1. Persamaan Dasar Hukum II Kirchhoff (${loopLabel}):</div>
+                        <div class="text-sky-700 dark:text-sky-300 overflow-x-auto">
+                            $$\\sum \\varepsilon + \\sum (I \\cdot R) = 0$$
+                            $$(${fmtFirst(p.termE1)}) ${fmtSigned(p.termE2)} + I \\cdot (R_1 + R_2 + R_3) = 0$$
+                        </div>
+                    </div>
+                    <div class="p-3.5 rounded-xl bg-lab-bg border border-lab-border space-y-1.5">
+                        <div class="text-slate-500 dark:text-slate-400 text-xs font-semibold">2. Substitusi Nilai Parameter:</div>
+                        <div class="text-slate-800 dark:text-slate-200 overflow-x-auto">
+                            $$(${p.sumE}) + I \\cdot (${state.R1} + ${state.R2} + ${state.R3}) = 0$$
+                            $$${p.sumE} + ${p.R_total}I = 0 \\implies I = \\frac{${-p.sumE}}{${p.R_total}}$$
+                        </div>
+                    </div>
+                    <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-wrap items-center justify-between gap-2">
+                        <div class="text-slate-800 dark:text-slate-200">
+                            <span class="font-semibold">3. Hasil Kuat Arus: </span>
+                            <span class="text-amber-700 dark:text-amber-400 font-bold">$I = ${p.I_loop.toFixed(3)}\\text{ A}$</span>
+                        </div>
+                        <div class="text-xs text-slate-700 dark:text-slate-300">
+                            ${p.I_loop > 0.0001 ? '✅ Positif: Arus searah dengan arah loop.' : (p.I_loop < -0.0001 ? '⚠️ Negatif: Arus berlawanan arah loop.' : '⚖️ Nol: Tidak ada arus mengalir.')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Mode 2 UI
+                telemetryContainer.innerHTML = `
+                    <div class="bg-lab-panel border border-lab-border rounded-xl p-3 shadow-sm dark:shadow">
+                        <div class="text-[11px] text-slate-500 dark:text-slate-400">Arus Cabang Kiri (I₁)</div>
+                        <div class="text-base sm:text-lg font-mono font-bold text-rose-600 dark:text-rose-400 mt-0.5">${Math.abs(p.I_left_up).toFixed(2)} A</div>
+                        <div class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">${Math.abs(p.I_left_up) < 1e-4 ? 'Diam (0 A)' : (p.I_left_up > 0 ? 'Arah: Ke Atas ↑' : 'Arah: Ke Bawah ↓')}</div>
+                    </div>
+                    <div class="bg-lab-panel border border-lab-border rounded-xl p-3 shadow-sm dark:shadow">
+                        <div class="text-[11px] text-slate-500 dark:text-slate-400">Arus Cabang Tengah (I₂)</div>
+                        <div class="text-base sm:text-lg font-mono font-bold text-indigo-600 dark:text-indigo-400 mt-0.5">${Math.abs(p.I_mid_down).toFixed(2)} A</div>
+                        <div class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">${Math.abs(p.I_mid_down) < 1e-4 ? 'Diam (0 A)' : (p.I_mid_down > 0 ? 'Arah: Ke Bawah ↓' : 'Arah: Ke Atas ↑')}</div>
+                    </div>
+                    <div class="bg-lab-panel border border-lab-border rounded-xl p-3 shadow-sm dark:shadow">
+                        <div class="text-[11px] text-slate-500 dark:text-slate-400">Arus Cabang Kanan (I₃)</div>
+                        <div class="text-base sm:text-lg font-mono font-bold text-amber-600 dark:text-amber-400 mt-0.5">${Math.abs(p.I_right_up).toFixed(2)} A</div>
+                        <div class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">${Math.abs(p.I_right_up) < 1e-4 ? 'Diam (0 A)' : (p.I_right_up > 0 ? 'Arah: Ke Atas ↑' : 'Arah: Ke Bawah ↓')}</div>
+                    </div>
+                    <div class="bg-lab-panel border border-lab-border rounded-xl p-3 shadow-sm dark:shadow">
+                        <div class="text-[11px] text-slate-500 dark:text-slate-400">Tegangan Jepit Resistor</div>
+                        <div class="text-[11px] font-mono font-semibold text-emerald-600 dark:text-emerald-400 mt-1">V₁=${p.V1.toFixed(1)}V | V₂=${p.V2.toFixed(1)}V</div>
+                        <div class="text-[11px] font-mono font-semibold text-emerald-600 dark:text-emerald-400">V₃=${p.V3.toFixed(1)}V</div>
+                    </div>
+                `;
+
+                const l1Label = state.loop1Dir === 'cw' ? 'CW ↻' : 'CCW ↺';
+                const l2Label = state.loop2Dir === 'cw' ? 'CW ↻' : 'CCW ↺';
+
+                const s1 = state.loop1Dir === 'cw' ? 1 : -1;
+                const s2 = state.loop2Dir === 'cw' ? 1 : -1;
+                const e1Term = -s1 * state.E1;
+                const e2Term = +s2 * state.E2;
+                const couplingSign = -(s1 * s2);
+
+                calcContainer.innerHTML = `
+                    <div class="p-3.5 rounded-xl bg-lab-bg border border-lab-border space-y-1.5">
+                        <div class="text-slate-500 dark:text-slate-400 text-xs font-semibold">1. Sistem Persamaan Loop I (${l1Label}) & Loop II (${l2Label}):</div>
+                        <div class="text-sky-700 dark:text-sky-300 overflow-x-auto">
+                            $$\\begin{cases} (${e1Term}) + (${state.R1 + state.R2})I_1 ${couplingSign >= 0 ? '+' : '-'} (${state.R2})I_2 = 0 \\\\ (${e2Term}) ${couplingSign >= 0 ? '+' : '-'} (${state.R2})I_1 + (${state.R2 + state.R3})I_2 = 0 \\end{cases}$$
+                        </div>
+                    </div>
+                    <div class="p-3.5 rounded-xl bg-lab-bg border border-lab-border space-y-1.5">
+                        <div class="text-slate-500 dark:text-slate-400 text-xs font-semibold">2. Solusi Arus Loop & Hukum I Kirchhoff di Simpul B:</div>
+                        <div class="text-slate-800 dark:text-slate-200 overflow-x-auto">
+                            $$I_1 = ${p.I1.toFixed(3)}\\text{ A}, \\quad I_2 = ${p.I2.toFixed(3)}\\text{ A}$$
+                            $$I_{\\text{kiri}} (${p.I_left_up.toFixed(2)}\\text{ A}) + I_{\\text{kanan}} (${p.I_right_up.toFixed(2)}\\text{ A}) = I_{\\text{tengah}} (${p.I_mid_down.toFixed(2)}\\text{ A})$$
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                MathJax.typesetPromise([calcContainer]).catch(() => {});
+            }
+
+            updateValidationTable();
+        }
+
+        function updateValidationTable() {
+            const tbody = document.getElementById('validation-table-body');
+            if (!tbody) return;
+            const p = state.physics;
+
+            if (state.mode === 1) {
+                const i_mA = (p.I_loop * 1000).toFixed(2);
+                const i_A = p.I_loop.toFixed(3);
+                tbody.innerHTML = `
+                    <tr class="hover:bg-lab-card/40">
+                        <td class="py-2.5 px-3 font-semibold text-white">Kuat Arus Loop (I)</td>
+                        <td class="py-2.5 px-3 font-mono text-slate-300">${i_A} A (${i_mA} mA)</td>
+                        <td class="py-2.5 px-3 font-mono text-sky-400">${i_A} A (${i_mA} mA)</td>
+                        <td class="py-2.5 px-3 font-mono font-bold text-emerald-400">0.00%</td>
+                    </tr>
+                    <tr class="hover:bg-lab-card/40">
+                        <td class="py-2.5 px-3 font-semibold text-white">Tegangan Jepit V<sub>R1</sub></td>
+                        <td class="py-2.5 px-3 font-mono text-slate-300">${p.V1.toFixed(2)} V</td>
+                        <td class="py-2.5 px-3 font-mono text-sky-400">${p.V1.toFixed(2)} V</td>
+                        <td class="py-2.5 px-3 font-mono font-bold text-emerald-400">0.00%</td>
+                    </tr>
+                    <tr class="hover:bg-lab-card/40">
+                        <td class="py-2.5 px-3 font-semibold text-white">Tegangan Jepit V<sub>R2</sub></td>
+                        <td class="py-2.5 px-3 font-mono text-slate-300">${p.V2.toFixed(2)} V</td>
+                        <td class="py-2.5 px-3 font-mono text-sky-400">${p.V2.toFixed(2)} V</td>
+                        <td class="py-2.5 px-3 font-mono font-bold text-emerald-400">0.00%</td>
+                    </tr>
+                    <tr class="hover:bg-lab-card/40">
+                        <td class="py-2.5 px-3 font-semibold text-white">Tegangan Jepit V<sub>R3</sub></td>
+                        <td class="py-2.5 px-3 font-mono text-slate-300">${p.V3.toFixed(2)} V</td>
+                        <td class="py-2.5 px-3 font-mono text-sky-400">${p.V3.toFixed(2)} V</td>
+                        <td class="py-2.5 px-3 font-mono font-bold text-emerald-400">0.00%</td>
+                    </tr>
+                    <tr class="hover:bg-lab-card/40 bg-emerald-950/20">
+                        <td class="py-2.5 px-3 font-semibold text-emerald-300">Jumlah Tegangan Loop (ΣV)</td>
+                        <td class="py-2.5 px-3 font-mono text-slate-300">0.00 V</td>
+                        <td class="py-2.5 px-3 font-mono text-emerald-400">${Math.abs(p.kvlSum).toFixed(2)} V</td>
+                        <td class="py-2.5 px-3 font-mono font-bold text-emerald-400">0.00%</td>
+                    </tr>
+                `;
+            } else {
+                tbody.innerHTML = `
+                    <tr class="hover:bg-lab-card/40">
+                        <td class="py-2.5 px-3 font-semibold text-white">Arus Cabang Kiri (I<sub>1</sub>)</td>
+                        <td class="py-2.5 px-3 font-mono text-slate-300">${p.I_left_up.toFixed(3)} A (${(p.I_left_up * 1000).toFixed(1)} mA)</td>
+                        <td class="py-2.5 px-3 font-mono text-sky-400">${p.I_left_up.toFixed(3)} A (${(p.I_left_up * 1000).toFixed(1)} mA)</td>
+                        <td class="py-2.5 px-3 font-mono font-bold text-emerald-400">0.00%</td>
+                    </tr>
+                    <tr class="hover:bg-lab-card/40">
+                        <td class="py-2.5 px-3 font-semibold text-white">Arus Cabang Tengah (I<sub>2</sub>)</td>
+                        <td class="py-2.5 px-3 font-mono text-slate-300">${p.I_mid_down.toFixed(3)} A (${(p.I_mid_down * 1000).toFixed(1)} mA)</td>
+                        <td class="py-2.5 px-3 font-mono text-sky-400">${p.I_mid_down.toFixed(3)} A (${(p.I_mid_down * 1000).toFixed(1)} mA)</td>
+                        <td class="py-2.5 px-3 font-mono font-bold text-emerald-400">0.00%</td>
+                    </tr>
+                    <tr class="hover:bg-lab-card/40">
+                        <td class="py-2.5 px-3 font-semibold text-white">Arus Cabang Kanan (I<sub>3</sub>)</td>
+                        <td class="py-2.5 px-3 font-mono text-slate-300">${p.I_right_up.toFixed(3)} A (${(p.I_right_up * 1000).toFixed(1)} mA)</td>
+                        <td class="py-2.5 px-3 font-mono text-sky-400">${p.I_right_up.toFixed(3)} A (${(p.I_right_up * 1000).toFixed(1)} mA)</td>
+                        <td class="py-2.5 px-3 font-mono font-bold text-emerald-400">0.00%</td>
+                    </tr>
+                    <tr class="hover:bg-lab-card/40">
+                        <td class="py-2.5 px-3 font-semibold text-white">Tegangan Jepit V<sub>R1</sub> / V<sub>R2</sub> / V<sub>R3</sub></td>
+                        <td class="py-2.5 px-3 font-mono text-slate-300">${p.V1.toFixed(2)}V / ${p.V2.toFixed(2)}V / ${p.V3.toFixed(2)}V</td>
+                        <td class="py-2.5 px-3 font-mono text-sky-400">${p.V1.toFixed(2)}V / ${p.V2.toFixed(2)}V / ${p.V3.toFixed(2)}V</td>
+                        <td class="py-2.5 px-3 font-mono font-bold text-emerald-400">0.00%</td>
+                    </tr>
+                `;
+            }
+        }
+
+        function copyValidationTable() {
+            const p = state.physics;
+            const header = 'Parameter\tPerhitungan Teori\tKeluaran Simulasi\tGalat (%)';
+            let rows = [];
+            if (state.mode === 1) {
+                rows = [
+                    `Kuat Arus Loop (I)\t${p.I_loop.toFixed(3)} A (${(p.I_loop * 1000).toFixed(2)} mA)\t${p.I_loop.toFixed(3)} A (${(p.I_loop * 1000).toFixed(2)} mA)\t0.00%`,
+                    `Tegangan VR1\t${p.V1.toFixed(2)} V\t${p.V1.toFixed(2)} V\t0.00%`,
+                    `Tegangan VR2\t${p.V2.toFixed(2)} V\t${p.V2.toFixed(2)} V\t0.00%`,
+                    `Tegangan VR3\t${p.V3.toFixed(2)} V\t${p.V3.toFixed(2)} V\t0.00%`,
+                    `Jumlah Tegangan Loop (ΣV)\t0.00 V\t${Math.abs(p.kvlSum).toFixed(2)} V\t0.00%`
+                ];
+            } else {
+                rows = [
+                    `Arus Cabang Kiri (I1)\t${p.I_left_up.toFixed(3)} A\t${p.I_left_up.toFixed(3)} A\t0.00%`,
+                    `Arus Cabang Tengah (I2)\t${p.I_mid_down.toFixed(3)} A\t${p.I_mid_down.toFixed(3)} A\t0.00%`,
+                    `Arus Cabang Kanan (I3)\t${p.I_right_up.toFixed(3)} A\t${p.I_right_up.toFixed(3)} A\t0.00%`,
+                    `Tegangan VR1, VR2, VR3\t${p.V1.toFixed(2)}V, ${p.V2.toFixed(2)}V, ${p.V3.toFixed(2)}V\t${p.V1.toFixed(2)}V, ${p.V2.toFixed(2)}V, ${p.V3.toFixed(2)}V\t0.00%`
+                ];
+            }
+            const text = [header, ...rows].join('\n');
+            const tempArea = document.createElement('textarea');
+            tempArea.value = text;
+            document.body.appendChild(tempArea);
+            tempArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempArea);
+
+            const lbl = document.getElementById('copy-val-label');
+            lbl.textContent = 'Tersalin!';
+            setTimeout(() => { lbl.textContent = 'Salin Validasi'; }, 1800);
+        }
+
+        // ==========================================
+        // CANVAS DRAWING HELPERS
+        // ==========================================
+
+        function drawBattery(ctx, x, y, voltage, label, subLabel) {
+            const isDark = state.theme === 'dark';
+            const gap = 12;
+            const longHalf = 22;
+            const shortHalf = 11;
+
+            // Clear wire segment behind battery
+            ctx.fillStyle = isDark ? '#070b14' : '#ffffff';
+            ctx.fillRect(x - 26, y - gap - 4, 52, gap * 2 + 8);
+
+            const isPositiveTop = voltage >= 0;
+            const topHalf = voltage === 0 ? 15 : (isPositiveTop ? longHalf : shortHalf);
+            const botHalf = voltage === 0 ? 15 : (isPositiveTop ? shortHalf : longHalf);
+
+            // Top plate
+            ctx.beginPath();
+            ctx.lineWidth = isPositiveTop && voltage !== 0 ? 3 : 4.5;
+            ctx.strokeStyle = voltage === 0 ? '#64748b' : (isPositiveTop ? '#e11d48' : '#0284c7');
+            ctx.moveTo(x - topHalf, y - gap / 2);
+            ctx.lineTo(x + topHalf, y - gap / 2);
+            ctx.stroke();
+
+            // Bottom plate
+            ctx.beginPath();
+            ctx.lineWidth = !isPositiveTop && voltage !== 0 ? 3 : 4.5;
+            ctx.strokeStyle = voltage === 0 ? '#64748b' : (!isPositiveTop ? '#e11d48' : '#0284c7');
+            ctx.moveTo(x - botHalf, y + gap / 2);
+            ctx.lineTo(x + botHalf, y + gap / 2);
+            ctx.stroke();
+
+            // + and - signs
+            if (voltage !== 0) {
+                ctx.font = 'bold 13px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                ctx.fillStyle = isPositiveTop ? '#e11d48' : '#0284c7';
+                ctx.fillText(isPositiveTop ? '+' : '−', x - 26, y - gap / 2 - 2);
+
+                ctx.fillStyle = !isPositiveTop ? '#e11d48' : '#0284c7';
+                ctx.fillText(!isPositiveTop ? '+' : '−', x - 26, y + gap / 2 + 2);
+            }
+
+            // Component Label Box
+            ctx.font = 'bold 12px Inter, sans-serif';
+            ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
+            ctx.textAlign = 'left';
+            ctx.fillText(`${label} = ${Math.abs(voltage)} V`, x + 28, y - 6);
+
+            ctx.font = '11px JetBrains Mono, monospace';
+            ctx.fillStyle = isDark ? '#94a3b8' : '#475569';
+            ctx.fillText(subLabel, x + 28, y + 10);
+        }
+
+        function drawResistor(ctx, x, y, orientation, resistance, voltageDrop, label) {
+            const isDark = state.theme === 'dark';
+            const length = 64;
+            const amp = 9;
+            const zigzags = 6;
+
+            ctx.save();
+            ctx.translate(x, y);
+            if (orientation === 'vertical') {
+                ctx.rotate(Math.PI / 2);
+            }
+
+            // Clear wire underneath
+            ctx.fillStyle = isDark ? '#070b14' : '#ffffff';
+            ctx.fillRect(-length / 2, -amp - 3, length, (amp + 3) * 2);
+
+            // Glow effect
+            ctx.shadowColor = isDark ? 'rgba(56, 189, 248, 0.35)' : 'rgba(2, 132, 199, 0.2)';
+            ctx.shadowBlur = 8;
+
+            // Zigzag path
+            ctx.beginPath();
+            ctx.lineWidth = 2.8;
+            ctx.strokeStyle = isDark ? '#38bdf8' : '#0284c7';
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+
+            const step = length / (zigzags * 2);
+            ctx.moveTo(-length / 2, 0);
+            for (let i = 0; i < zigzags; i++) {
+                const x1 = -length / 2 + (i * 2 + 0.5) * step;
+                const x2 = -length / 2 + (i * 2 + 1.5) * step;
+                ctx.lineTo(x1, -amp);
+                ctx.lineTo(x2, amp);
+            }
+            ctx.lineTo(length / 2, 0);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            ctx.restore();
+
+            // Labels (always upright)
+            ctx.textAlign = 'center';
+            if (orientation === 'horizontal') {
+                ctx.font = 'bold 12px Inter, sans-serif';
+                ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
+                ctx.fillText(`${label} = ${resistance} Ω`, x, y - 22);
+
+                ctx.font = '11px JetBrains Mono, monospace';
+                ctx.fillStyle = isDark ? '#34d399' : '#059669';
+                ctx.fillText(`V = ${voltageDrop.toFixed(2)} V`, x, y + 24);
+            } else {
+                ctx.textAlign = 'left';
+                ctx.font = 'bold 12px Inter, sans-serif';
+                ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
+                ctx.fillText(`${label} = ${resistance} Ω`, x + 18, y - 6);
+
+                ctx.font = '11px JetBrains Mono, monospace';
+                ctx.fillStyle = isDark ? '#34d399' : '#059669';
+                ctx.fillText(`V = ${voltageDrop.toFixed(2)} V`, x + 18, y + 10);
+            }
+        }
+
+        function drawLoopIndicator(ctx, cx, cy, radius, direction, label) {
+            const isDark = state.theme === 'dark';
+            ctx.save();
+            ctx.beginPath();
+            ctx.strokeStyle = isDark ? 'rgba(52, 211, 153, 0.55)' : 'rgba(5, 150, 105, 0.65)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 4]);
+
+            // Draw arc from -140 deg to +110 deg
+            const startAngle = -Math.PI * 0.75;
+            const endAngle = Math.PI * 0.75;
+            ctx.arc(cx, cy, radius, startAngle, endAngle, false);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Arrowhead at end of arc
+            const arrowAngle = direction === 'cw' ? endAngle : startAngle;
+            const ax = cx + radius * Math.cos(arrowAngle);
+            const ay = cy + radius * Math.sin(arrowAngle);
+            const tangent = direction === 'cw' ? arrowAngle + Math.PI / 2 : arrowAngle - Math.PI / 2;
+
+            ctx.beginPath();
+            ctx.fillStyle = isDark ? '#34d399' : '#059669';
+            ctx.moveTo(ax, ay);
+            ctx.lineTo(ax - 9 * Math.cos(tangent - 0.45), ay - 9 * Math.sin(tangent - 0.45));
+            ctx.lineTo(ax - 9 * Math.cos(tangent + 0.45), ay - 9 * Math.sin(tangent + 0.45));
+            ctx.closePath();
+            ctx.fill();
+
+            // Center text
+            ctx.font = 'bold 11px Inter, sans-serif';
+            ctx.fillStyle = isDark ? '#34d399' : '#059669';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, cx, cy - 7);
+            ctx.font = '10px JetBrains Mono, monospace';
+            ctx.fillStyle = isDark ? '#94a3b8' : '#475569';
+            ctx.fillText(direction === 'cw' ? 'Searah (CW)' : 'Berlawanan', cx, cy + 7);
+            ctx.restore();
+        }
+
+        // Draw animated charge dots along a polyline path
+        function drawParticlesOnPath(ctx, points, currentAmp, phaseOffset) {
+            // Calculate total path length
+            let totalLen = 0;
+            const segLengths = [];
+            for (let i = 0; i < points.length - 1; i++) {
+                const dx = points[i + 1].x - points[i].x;
+                const dy = points[i + 1].y - points[i].y;
+                const len = Math.hypot(dx, dy);
+                segLengths.push(len);
+                totalLen += len;
+            }
+
+            if (totalLen <= 0) return;
+
+            // Conventional current flows in direction of currentAmp; Electron flow is opposite!
+            const flowSign = state.flowType === 'conventional' ? 1 : -1;
+            const effectiveCurrent = currentAmp * flowSign;
+
+            const spacing = 28; // pixels between charge carriers
+            const count = Math.floor(totalLen / spacing);
+            const isZero = Math.abs(effectiveCurrent) < 1e-5;
+
+            // Color styling
+            const particleColor = state.flowType === 'conventional' ? '#fbbf24' : '#22d3ee';
+            const glowColor = state.flowType === 'conventional' ? 'rgba(251, 191, 36, 0.85)' : 'rgba(34, 211, 238, 0.85)';
+
+            ctx.save();
+            ctx.fillStyle = isZero ? '#475569' : particleColor;
+            if (!isZero) {
+                ctx.shadowColor = glowColor;
+                ctx.shadowBlur = 8;
+            }
+
+            // Distance shift based on phaseOffset
+            const shift = ((phaseOffset % spacing) + spacing) % spacing;
+
+            for (let i = 0; i < count; i++) {
+                let d = (i * spacing + shift) % totalLen;
+                if (d < 0) d += totalLen;
+
+                // Find segment
+                let acc = 0;
+                for (let s = 0; s < segLengths.length; s++) {
+                    if (d <= acc + segLengths[s] || s === segLengths.length - 1) {
+                        const t = segLengths[s] > 0 ? (d - acc) / segLengths[s] : 0;
+                        const px = points[s].x + (points[s + 1].x - points[s].x) * t;
+                        const py = points[s].y + (points[s + 1].y - points[s].y) * t;
+
+                        ctx.beginPath();
+                        ctx.arc(px, py, isZero ? 3 : 4, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // Small directional chevron inside/near dot when moving
+                        if (!isZero && i % 2 === 0) {
+                            const angle = Math.atan2(points[s + 1].y - points[s].y, points[s + 1].x - points[s].x) + (effectiveCurrent < 0 ? Math.PI : 0);
+                            ctx.beginPath();
+                            ctx.strokeStyle = '#070b14';
+                            ctx.lineWidth = 1.3;
+                            ctx.moveTo(px - 2 * Math.cos(angle - 0.7), py - 2 * Math.sin(angle - 0.7));
+                            ctx.lineTo(px + 2.2 * Math.cos(angle), py + 2.2 * Math.sin(angle));
+                            ctx.lineTo(px - 2 * Math.cos(angle + 0.7), py - 2 * Math.sin(angle + 0.7));
+                            ctx.stroke();
+                        }
+                        break;
+                    }
+                    acc += segLengths[s];
+                }
+            }
+            ctx.restore();
+        }
+
+        // Main Render Loop
+        let lastTime = performance.now();
+        const phases = { single: 0, left: 0, mid: 0, right: 0 };
+
+        function render(now) {
+            const dt = Math.min((now - lastTime) / 1000, 0.1);
+            lastTime = now;
+
+            const wrapper = document.getElementById('canvas-wrapper');
+            const W = wrapper.clientWidth;
+            const H = wrapper.clientHeight;
+            const isDark = state.theme === 'dark';
+
+            // Clear background
+            ctx.fillStyle = isDark ? '#070b14' : '#ffffff';
+            ctx.fillRect(0, 0, W, H);
+
+            // Subtle engineering grid background
+            ctx.strokeStyle = isDark ? 'rgba(30, 41, 59, 0.45)' : 'rgba(203, 213, 225, 0.45)';
+            ctx.lineWidth = 1;
+            const gridSize = 28;
+            for (let gx = 0; gx < W; gx += gridSize) {
+                ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
+            }
+            for (let gy = 0; gy < H; gy += gridSize) {
+                ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+            }
+
+            const p = state.physics;
+            const flowSign = state.flowType === 'conventional' ? 1 : -1;
+            const speedScale = 45 * state.speed; // pixels per second per Ampere
+
+            if (state.mode === 1) {
+                // ==========================================
+                // RENDER 1-LOOP CIRCUIT
+                // ==========================================
+                const padX = Math.max(70, W * 0.16);
+                const padY = Math.max(58, H * 0.16);
+                const left = padX;
+                const right = W - padX;
+                const top = padY;
+                const bottom = H - padY;
+                const midX = (left + right) / 2;
+                const midY = (top + bottom) / 2;
+
+                // Update animation phase
+                if (state.isPlaying && Math.abs(p.I_cw) > 1e-5) {
+                    const v = Math.sign(p.I_cw * flowSign) * Math.min(Math.abs(p.I_cw) * speedScale, 240);
+                    phases.single += v * dt;
+                }
+
+                // Draw Main Closed Wire
+                ctx.strokeStyle = isDark ? '#475569' : '#64748b';
+                ctx.lineWidth = 4;
+                ctx.lineJoin = 'round';
+                ctx.strokeRect(left, top, right - left, bottom - top);
+
+                // Draw Animated Particles along clockwise rectangle
+                const loopPoints = [
+                    { x: left, y: bottom },
+                    { x: left, y: top },
+                    { x: right, y: top },
+                    { x: right, y: bottom },
+                    { x: left, y: bottom }
+                ];
+                drawParticlesOnPath(ctx, loopPoints, p.I_cw, phases.single);
+
+                // Draw Loop Reference Indicator in Center
+                drawLoopIndicator(ctx, midX, midY, Math.min(44, (bottom - top) * 0.24), state.loop1Dir, 'Loop Acuan');
+
+                // Draw Node Badges (A, B, C, D, E) matching the Potential Graph
+                const drawNodeBadge = (nx, ny, letter, ox, oy) => {
+                    ctx.beginPath();
+                    ctx.fillStyle = isDark ? '#38bdf8' : '#0284c7';
+                    ctx.arc(nx, ny, 4.5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.font = 'bold 12px Inter, sans-serif';
+                    ctx.fillStyle = isDark ? '#fbbf24' : '#d97706';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(letter, nx + ox, ny + oy);
+                };
+                drawNodeBadge(left, bottom, 'A', -14, 12);
+                drawNodeBadge(left, top, 'B', -14, -12);
+                drawNodeBadge(right, top, 'C', 14, -12);
+                drawNodeBadge(right, bottom, 'D', 14, 12);
+                drawNodeBadge(midX, bottom, 'E', 0, 15);
+
+                // Draw Components
+                drawBattery(ctx, left, midY, state.E1, 'ε₁', state.E1 >= 0 ? '(+ Atas)' : '(+ Bawah)');
+                drawBattery(ctx, right, midY, state.E2, 'ε₂', state.E2 >= 0 ? '(+ Atas)' : '(+ Bawah)');
+                drawResistor(ctx, midX, top, 'horizontal', state.R1, p.V1, 'R₁');
+                drawResistor(ctx, left + (right - left) * 0.28, bottom, 'horizontal', state.R2, p.V2, 'R₂');
+                drawResistor(ctx, left + (right - left) * 0.72, bottom, 'horizontal', state.R3, p.V3, 'R₃');
+
+            } else {
+                // ==========================================
+                // RENDER 2-LOOP CIRCUIT
+                // ==========================================
+                const padX = Math.max(65, W * 0.14);
+                const padY = Math.max(55, H * 0.16);
+                const left = padX;
+                const right = W - padX;
+                const top = padY;
+                const bottom = H - padY;
+                const midX = (left + right) / 2;
+                const midY = (top + bottom) / 2;
+
+                // Update animation phases for 3 branches
+                if (state.isPlaying) {
+                    const clampVel = (I) => Math.abs(I) < 1e-5 ? 0 : Math.sign(I * flowSign) * Math.min(Math.abs(I) * speedScale, 220);
+                    phases.left += clampVel(p.I_left_up) * dt;
+                    phases.mid += clampVel(p.I_mid_down) * dt;
+                    phases.right += clampVel(p.I_right_up) * dt;
+                }
+
+                // Draw Main Wires (Outer rectangle + center vertical branch)
+                ctx.strokeStyle = isDark ? '#475569' : '#64748b';
+                ctx.lineWidth = 4;
+                ctx.lineJoin = 'round';
+                ctx.strokeRect(left, top, right - left, bottom - top);
+
+                ctx.beginPath();
+                ctx.moveTo(midX, top);
+                ctx.lineTo(midX, bottom);
+                ctx.stroke();
+
+                // Branch 1 Path (Bottom-Mid -> Bottom-Left -> Top-Left -> Top-Mid) - direction: I_left_up
+                const leftBranchPts = [
+                    { x: midX, y: bottom },
+                    { x: left, y: bottom },
+                    { x: left, y: top },
+                    { x: midX, y: top }
+                ];
+                drawParticlesOnPath(ctx, leftBranchPts, p.I_left_up, phases.left);
+
+                // Branch 2 Path (Top-Mid -> Bottom-Mid) - direction: I_mid_down
+                const midBranchPts = [
+                    { x: midX, y: top },
+                    { x: midX, y: bottom }
+                ];
+                drawParticlesOnPath(ctx, midBranchPts, p.I_mid_down, phases.mid);
+
+                // Branch 3 Path (Bottom-Mid -> Bottom-Right -> Top-Right -> Top-Mid) - direction: I_right_up
+                const rightBranchPts = [
+                    { x: midX, y: bottom },
+                    { x: right, y: bottom },
+                    { x: right, y: top },
+                    { x: midX, y: top }
+                ];
+                drawParticlesOnPath(ctx, rightBranchPts, p.I_right_up, phases.right);
+
+                // Junction Dots & Node Labels (A, B, C, D, E, F) matching Potential Graph
+                const drawNode2 = (nx, ny, letter, ox, oy, isJunction = false) => {
+                    ctx.beginPath();
+                    ctx.fillStyle = isJunction ? (isDark ? '#38bdf8' : '#0284c7') : '#64748b';
+                    ctx.arc(nx, ny, isJunction ? 5.5 : 4, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.font = 'bold 12px Inter, sans-serif';
+                    ctx.fillStyle = isDark ? '#fbbf24' : '#d97706';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(letter, nx + ox, ny + oy);
+                };
+                drawNode2(left, top, 'A', -14, -12);
+                drawNode2(midX, top, 'B', 0, -15, true);
+                drawNode2(right, top, 'C', 14, -12);
+                drawNode2(right, bottom, 'D', 14, 12);
+                drawNode2(midX, bottom, 'E', 0, 15, true);
+                drawNode2(left, bottom, 'F', -14, 12);
+
+                // Loop Reference Indicators in Left and Right Sub-loops
+                const rLoop = Math.min(34, (midX - left) * 0.28);
+                drawLoopIndicator(ctx, (left + midX) / 2, midY, rLoop, state.loop1Dir, 'Loop I');
+                drawLoopIndicator(ctx, (midX + right) / 2, midY, rLoop, state.loop2Dir, 'Loop II');
+
+                // Components
+                // Left branch: E1 (lower) & R1 (upper)
+                drawBattery(ctx, left, top + (bottom - top) * 0.68, state.E1, 'ε₁', state.E1 >= 0 ? '(+ Atas)' : '(+ Bawah)');
+                drawResistor(ctx, left, top + (bottom - top) * 0.28, 'vertical', state.R1, p.V1, 'R₁');
+
+                // Middle branch: R2
+                drawResistor(ctx, midX, midY, 'vertical', state.R2, p.V2, 'R₂');
+
+                // Right branch: E2 (lower) & R3 (upper)
+                drawBattery(ctx, right, top + (bottom - top) * 0.68, state.E2, 'ε₂', state.E2 >= 0 ? '(+ Atas)' : '(+ Bawah)');
+                drawResistor(ctx, right, top + (bottom - top) * 0.28, 'vertical', state.R3, p.V3, 'R₃');
+            }
+
+            requestAnimationFrame(render);
+        }
+
+        // ==========================================
+        // USER INTERACTION HANDLERS
+        // ==========================================
+
+        function setCircuitMode(mode) {
+            state.mode = mode;
+
+            const btn1 = document.getElementById('btn-mode-1');
+            const btn2 = document.getElementById('btn-mode-2');
+            const titleBadge = document.getElementById('circuit-title-badge');
+            const loopDirContainer = document.getElementById('loop-direction-controls');
+
+            if (mode === 1) {
+                btn1.className = 'px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-sky-600 text-white shadow';
+                btn2.className = 'px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-400 hover:text-white';
+                titleBadge.textContent = 'Skema Rangkaian Tertutup Tunggal (1 Loop)';
+
+                document.getElementById('label-R1-loc').textContent = 'Hambatan 1 (Atas)';
+                document.getElementById('label-R2-loc').textContent = 'Hambatan 2 (Bawah Kiri)';
+                document.getElementById('label-R3-loc').textContent = 'Hambatan 3 (Bawah Kanan)';
+
+                loopDirContainer.innerHTML = `
+                    <span class="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i> Arah Penelusuran Loop (Acuan):
+                    </span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="setLoopDirection(1, 'cw')" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold ${state.loop1Dir === 'cw' ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/40' : 'bg-lab-bg text-slate-400 border border-lab-border hover:text-white'} transition-all flex items-center justify-center gap-1">
+                            <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i> Searah Jarum Jam
+                        </button>
+                        <button onclick="setLoopDirection(1, 'ccw')" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold ${state.loop1Dir === 'ccw' ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/40' : 'bg-lab-bg text-slate-400 border border-lab-border hover:text-white'} transition-all flex items-center justify-center gap-1">
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Berlawanan
+                        </button>
+                    </div>
+                `;
+            } else {
+                btn2.className = 'px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-sky-600 text-white shadow';
+                btn1.className = 'px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-400 hover:text-white';
+                titleBadge.textContent = 'Skema Rangkaian Bercabang (2 Loop)';
+
+                document.getElementById('label-R1-loc').textContent = 'Hambatan 1 (Cabang Kiri)';
+                document.getElementById('label-R2-loc').textContent = 'Hambatan 2 (Cabang Tengah)';
+                document.getElementById('label-R3-loc').textContent = 'Hambatan 3 (Cabang Kanan)';
+
+                loopDirContainer.innerHTML = `
+                    <span class="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i> Arah Acuan Loop I & Loop II:
+                    </span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="toggleLoop2Dir(1)" class="px-2 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-600/30 transition-all flex items-center justify-center gap-1">
+                            Loop I: ${state.loop1Dir === 'cw' ? 'CW ↻' : 'CCW ↺'}
+                        </button>
+                        <button onclick="toggleLoop2Dir(2)" class="px-2 py-1.5 rounded-lg text-xs font-semibold bg-sky-600/20 text-sky-400 border border-sky-500/40 hover:bg-sky-600/30 transition-all flex items-center justify-center gap-1">
+                            Loop II: ${state.loop2Dir === 'cw' ? 'CW ↻' : 'CCW ↺'}
+                        </button>
+                    </div>
+                `;
+            }
+
+            lucide.createIcons();
+            updateUI();
+        }
+
+        function setLoopDirection(loopNum, dir) {
+            if (loopNum === 1) state.loop1Dir = dir;
+            if (loopNum === 2) state.loop2Dir = dir;
+            setCircuitMode(state.mode); // Refresh buttons & UI
+        }
+
+        function toggleLoop2Dir(loopNum) {
+            if (loopNum === 1) state.loop1Dir = state.loop1Dir === 'cw' ? 'ccw' : 'cw';
+            if (loopNum === 2) state.loop2Dir = state.loop2Dir === 'cw' ? 'ccw' : 'cw';
+            setCircuitMode(2);
+        }
+
+        function updateParam(key, rawValue) {
+            let val = parseFloat(rawValue);
+            if (isNaN(val)) return;
+
+            if (key === 'E1' || key === 'E2') {
+                val = Math.max(-24, Math.min(24, val));
+            } else {
+                val = Math.max(1, Math.min(50, val));
+            }
+
+            state[key] = val;
+            document.getElementById(`slider-${key}`).value = val;
+            document.getElementById(`input-${key}`).value = val;
+            updateUI();
+        }
+
+        function flipPolarity(key) {
+            const newVal = state[key] === 0 ? 12 : -state[key];
+            updateParam(key, newVal);
+        }
+
+        function updateSpeed(val) {
+            state.speed = parseFloat(val);
+            document.getElementById('speed-val-label').textContent = `${state.speed.toFixed(1)}x`;
+        }
+
+        function toggleFlowType() {
+            state.flowType = state.flowType === 'conventional' ? 'electron' : 'conventional';
+            const btn = document.getElementById('btn-flow-type');
+            const dot = document.getElementById('flow-dot-indicator');
+            const label = document.getElementById('flow-type-label');
+
+            if (state.flowType === 'conventional') {
+                btn.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25 transition-all flex items-center gap-1.5';
+                dot.className = 'w-2 h-2 rounded-full bg-amber-400';
+                label.textContent = 'Arus Konvensional (+ ke -)';
+            } else {
+                btn.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/25 transition-all flex items-center gap-1.5';
+                dot.className = 'w-2 h-2 rounded-full bg-cyan-400';
+                label.textContent = 'Aliran Elektron (- ke +)';
+            }
+        }
+
+        function togglePlayPause() {
+            state.isPlaying = !state.isPlaying;
+            const icon = document.getElementById('play-pause-icon');
+            const text = document.getElementById('play-pause-text');
+            icon.setAttribute('data-lucide', state.isPlaying ? 'pause' : 'play');
+            text.textContent = state.isPlaying ? 'Jeda Animasi' : 'Lanjutkan';
+            lucide.createIcons();
+        }
+
+        function resetParameters() {
+            updateParam('E1', 12);
+            updateParam('E2', 6);
+            updateParam('R1', 4);
+            updateParam('R2', 6);
+            updateParam('R3', 2);
+            state.loop1Dir = 'cw';
+            state.loop2Dir = 'cw';
+            setCircuitMode(state.mode);
+        }
+
+        function applyPreset(preset) {
+            if (preset === 'setimbang') {
+                setCircuitMode(1);
+                updateParam('E1', 12);
+                updateParam('E2', 12);
+                updateParam('R1', 5);
+                updateParam('R2', 5);
+                updateParam('R3', 5);
+            } else if (preset === 'seri_searah') {
+                setCircuitMode(1);
+                updateParam('E1', 12);
+                updateParam('E2', -12);
+                updateParam('R1', 4);
+                updateParam('R2', 4);
+                updateParam('R3', 4);
+            } else if (preset === 'arus_balik') {
+                setCircuitMode(1);
+                state.loop1Dir = 'cw';
+                updateParam('E1', 6);
+                updateParam('E2', 18);
+                updateParam('R1', 3);
+                updateParam('R2', 5);
+                updateParam('R3', 4);
+                setCircuitMode(1);
+            } else if (preset === 'jembatan_2loop') {
+                setCircuitMode(2);
+                updateParam('E1', 18);
+                updateParam('E2', 6);
+                updateParam('R1', 6);
+                updateParam('R2', 3);
+                updateParam('R3', 6);
+            }
+        }
+
+        function toggleHelpModal() {
+            const modal = document.getElementById('help-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        // ==========================================
+        // PjBL EXPERIMENT LOGGER & CODE EXPLAINER
+        // ==========================================
+        const experimentLogs = [];
+
+        function recordExperimentRow() {
+            const p = state.physics;
+            const modeText = state.mode === 1 ? '1 Loop' : '2 Loop';
+            const emfText = `${state.E1}V / ${state.E2}V`;
+            const resText = `${state.R1} / ${state.R2} / ${state.R3}`;
+            const currText = state.mode === 1
+                ? `I = ${p.I_loop.toFixed(2)} A`
+                : `I₁=${p.I_left_up.toFixed(2)}, I₂=${p.I_mid_down.toFixed(2)}, I₃=${p.I_right_up.toFixed(2)}`;
+            const voltText = `${p.V1.toFixed(2)}, ${p.V2.toFixed(2)}, ${p.V3.toFixed(2)}`;
+
+            experimentLogs.push({ modeText, emfText, resText, currText, voltText });
+            renderExperimentTable();
+        }
+
+        function renderExperimentTable() {
+            const tbody = document.getElementById('experiment-table-body');
+            if (experimentLogs.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="py-4 px-3 text-center text-slate-500 font-sans">
+                            Belum ada data tercatat. Klik <strong class="text-amber-400">"Catat Data"</strong> saat menguji skenario.
+                        </td>
+                    </tr>`;
+                return;
+            }
+            tbody.innerHTML = experimentLogs.map((row, idx) => `
+                <tr class="hover:bg-lab-card/40">
+                    <td class="py-2 px-2.5 text-slate-400">${idx + 1}</td>
+                    <td class="py-2 px-2.5 text-sky-400 font-semibold">${row.modeText}</td>
+                    <td class="py-2 px-2.5">${row.emfText}</td>
+                    <td class="py-2 px-2.5">${row.resText}</td>
+                    <td class="py-2 px-2.5 text-amber-400 font-semibold">${row.currText}</td>
+                    <td class="py-2 px-2.5 text-emerald-400">${row.voltText}</td>
+                </tr>
+            `).join('');
+        }
+
+        function clearExperimentTable() {
+            experimentLogs.length = 0;
+            renderExperimentTable();
+        }
+
+        function copyExperimentTable() {
+            if (experimentLogs.length === 0) return;
+            const header = 'No\tMode\tGGL (E1/E2)\tHambatan (R1/R2/R3)\tHasil Arus (A)\tTegangan V1,V2,V3 (V)';
+            const rows = experimentLogs.map((r, i) => `${i + 1}\t${r.modeText}\t${r.emfText}\t${r.resText}\t${r.currText}\t${r.voltText}`);
+            const text = [header, ...rows].join('\n');
+
+            const tempArea = document.createElement('textarea');
+            tempArea.value = text;
+            document.body.appendChild(tempArea);
+            tempArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempArea);
+
+            const lbl = document.getElementById('copy-table-label');
+            lbl.textContent = 'Tersalin!';
+            setTimeout(() => { lbl.textContent = 'Salin Tabel'; }, 1800);
+        }
+
+        function toggleCodeExplain() {
+            const body = document.getElementById('code-explain-body');
+            const chevron = document.getElementById('code-explain-chevron');
+            body.classList.toggle('hidden');
+            chevron.classList.toggle('rotate-180');
+        }
+
+        function toggleTheme() {
+            const htmlEl = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            const label = document.getElementById('theme-label');
+
+            if (state.theme === 'dark') {
+                state.theme = 'light';
+                htmlEl.classList.remove('dark');
+                icon.setAttribute('data-lucide', 'moon');
+                label.textContent = 'Latar Hitam';
+            } else {
+                state.theme = 'dark';
+                htmlEl.classList.add('dark');
+                icon.setAttribute('data-lucide', 'sun');
+                label.textContent = 'Latar Putih';
+            }
+            lucide.createIcons();
+            drawPotentialGraph();
+        }
+
+        // Initialize on Window Load
+        window.onload = function () {
+            resizeCanvas();
+            setCircuitMode(1);
+            requestAnimationFrame(render);
+        };
+    </script>
+</body>
+</html>
